@@ -7,50 +7,56 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            margin: 0;
             background: linear-gradient(135deg, #232526 0%, #414345 100%);
             font-family: 'Roboto', Arial, sans-serif;
         }
-        canvas {
-            background: #111;
-            border: 2px solid #4fdcff;
-            box-shadow: 0 0 16px 4px #4fdcffcc, 0 4px 24px #000a;
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding-top: 40px;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            background: #222;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
         }
         h1 {
-            color: #0ff;
-            text-align: center;
-            font-family: 'Orbitron', 'Roboto', Arial, sans-serif;
-            font-size: 2.5em;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 8px #0ff8, 0 1px 0 #000;
-        }
-        #score, #highscore {
-            font-family: 'Orbitron', 'Roboto', Arial, sans-serif;
-            text-align: center;
-            font-size: 1.3em;
-            margin-top: 10px;
-            letter-spacing: 1px;
-            text-shadow: 0 1px 4px #000a;
+            color: #fff;
+            margin-top: 30px;
+            font-family: Arial, sans-serif;
         }
         #score {
-            color: #4fdcff;
+            color: #fff;
+            margin-bottom: 10px;
+            font-family: Arial, sans-serif;
         }
-        #highscore {
-            color: #0066ff;
+        canvas {
+            background: #111;
+            display: block;
+            margin: 0 auto;
+            border: 2px solid #fff;
         }
     </style>
 </head>
 <body>
-    <div>
-        <h1>Snake Game</h1>
-        <canvas id="game" width="400" height="400"></canvas>
-        <div id="score" style="color:#0f0; text-align:center; font-size:1.2em; margin-top:10px;">Score: 0</div>
-        <div id="highscore" style="color:#ff0; text-align:center; font-size:1.1em; margin-top:5px;">Highscore: 0</div>
-    </div>
+    <h1>Snake Game</h1>
+    <div id="score">Score: 0</div>
+    <canvas id="game" width="400" height="400"></canvas>
     <script>
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
@@ -62,56 +68,26 @@
             y: Math.floor(Math.random() * 20) * box
         };
         let score = 0;
-        let highscore = Number(localStorage.getItem('snakeHighscore')) || 0;
-        <h1>Snake Game</h1>
-        let speed = 180; // initial speed in ms
-
-        function updateHighscoreDisplay() {
-            document.getElementById('highscore').textContent = 'Highscore: ' + highscore;
-        }
-        updateHighscoreDisplay();
+        let gameInterval;
 
         document.addEventListener('keydown', e => {
             if (e.key === 'ArrowLeft' && direction !== 'RIGHT') direction = 'LEFT';
             else if (e.key === 'ArrowUp' && direction !== 'DOWN') direction = 'UP';
             else if (e.key === 'ArrowRight' && direction !== 'LEFT') direction = 'RIGHT';
             else if (e.key === 'ArrowDown' && direction !== 'UP') direction = 'DOWN';
-            else if (e.code === 'Space') {
-                startGame();
-            }
+            else if (e.code === 'Space') startGame();
         });
 
-        let scorePointAnim = null;
-        let rainbowHue = 0;
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             // Draw snake
-            rainbowHue = (rainbowHue + 5) % 360;
             for (let i = 0; i < snake.length; i++) {
-                if (i === 0) {
-                    ctx.fillStyle = `hsl(${rainbowHue}, 100%, 50%)`;
-                } else {
-                    ctx.fillStyle = '#fff';
-                }
+                ctx.fillStyle = i === 0 ? '#0f0' : '#fff';
                 ctx.fillRect(snake[i].x, snake[i].y, box, box);
             }
             // Draw food
             ctx.fillStyle = '#f00';
             ctx.fillRect(food.x, food.y, box, box);
-
-            // Draw score point animation if active
-            if (scorePointAnim) {
-                ctx.save();
-                ctx.globalAlpha = scorePointAnim.alpha;
-                ctx.fillStyle = '#ff0';
-                ctx.font = 'bold 20px Arial';
-                ctx.fillText('+1', scorePointAnim.x, scorePointAnim.y);
-                ctx.restore();
-                scorePointAnim.y -= 1;
-                scorePointAnim.alpha -= 0.03;
-                if (scorePointAnim.alpha <= 0) scorePointAnim = null;
-            }
-
             // Move snake
             let head = { x: snake[0].x, y: snake[0].y };
             if (direction === 'LEFT') head.x -= box;
@@ -138,21 +114,6 @@
                     x: Math.floor(Math.random() * 20) * box,
                     y: Math.floor(Math.random() * 20) * box
                 };
-                // Start score point animation
-                scorePointAnim = {
-                    x: head.x + box / 2 - 10,
-                    y: head.y + box / 2,
-                    alpha: 1
-                };
-                if (score > highscore) {
-                    highscore = score;
-                    localStorage.setItem('snakeHighscore', highscore);
-                    updateHighscoreDisplay();
-                }
-                // Increase speed (lower interval) with each point, min 50ms
-                speed = Math.max(50, 180 - score * 7);
-                clearInterval(gameInterval);
-                gameInterval = setInterval(draw, speed);
             } else {
                 snake.pop();
             }
@@ -175,14 +136,12 @@
                 x: Math.floor(Math.random() * 20) * box,
                 y: Math.floor(Math.random() * 20) * box
             };
-            scorePointAnim = null;
-            updateHighscoreDisplay();
-            speed = 180;
             clearInterval(gameInterval);
-            gameInterval = setInterval(draw, speed);
+            gameInterval = setInterval(draw, 100);
         }
 
         startGame();
     </script>
 </body>
 </html>
+                // Start score point animation
